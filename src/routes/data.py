@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, UploadFile , File, status
 from fastapi.responses import JSONResponse
 from helpers.config import get_settings, Settings
-from controllers import DataController, ProjectController
+from controllers import DataController, ProjectController, ProcessController
 import aiofiles
 import os
 from models import ResponseSignal
 import logging
+from .schemes.data import ProcessRequest
 
 logger =logging.getLogger("uvicorn.error")
 data_router = APIRouter(
@@ -30,10 +31,7 @@ async def upload_data(project_id: str, file: UploadFile = File(...),
 
     project_dir_path = ProjectController().get_project_path(project_id=project_id)
 
-    file_path, new_filename = DataController().generate_unique_filepath(
-    orig_file_name=file.filename,
-    project_id=project_id
-    )
+    file_path ,file_id  = DataController().generate_unique_filepath(orig_file_name=file.filename , project_id= project_id)
 
 
     try:
@@ -57,6 +55,30 @@ async def upload_data(project_id: str, file: UploadFile = File(...),
     return JSONResponse(
         status_code = status.HTTP_200_OK ,
         content = {
-            "signal" : ResponseSignal.FILE_UPLOAD_SUCCESS.value
+            "signal" : ResponseSignal.FILE_UPLOAD_SUCCESS.value,
+            "file_id" : file_id
             }
+
         )
+
+@data_router.post("/process/{project_id}")
+async def process_data(project_id : str , process_request : ProcessRequest):
+    file_id = process_request.file_id
+    chunk_size = process_request.chunk_size
+    overlap_size = process_request.overlap_size
+
+    process_controller = ProcessController(project_id=project_id)
+
+    file_content = process_controller.get_file_content(file_id=file_id)
+
+    file_chunks = process_controller.process_file_content(file_content=file_content,file_id=file_id, chunk_size=chunk_size, overlap_size=overlap_size)
+
+    if file_chunks is None or len(file_chunks) == 0:
+        return JSONResponse(
+            status_code = status.HTTP_400_BAD_REQUEST ,
+            content = {
+                "signal" : ResponseSignal.PROCESSING_FAILD.value,
+                }
+            )
+
+    return file_chunks
