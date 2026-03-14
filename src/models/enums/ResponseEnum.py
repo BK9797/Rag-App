@@ -17,9 +17,12 @@ class ResponseSignal(Enum):
    INSERT_INTO_VECTORDB_EROOR ="insert_into_vectordb_error"
    INSERT_INTO_VECTORDB_SUCCESS ="insert_into_vectordb_success"
 
-   VECTOR_BD_COLLECTION_RETIVED = "vectordb collection retrived"
-   VECTORDB_SEARCH_SUCCESS = "vectordb search sucsses"
-   VECTORDB_SEARCH_ERROR = "vectordb search error"
+   VECTORDB_COLLECTION_RETRIEVED = "vectordb_collection_retrieved"
+   VECTORDB_SEARCH_ERROR = "vectordb_search_error"
+   VECTORDB_SEARCH_SUCCESS = "vectordb_search_success"
 
-   RAG_ANSWER_ERROR = "rag answer error"
-   RAG_ANSWER_SUCCESS = "rag answer success"
+   RAG_ANSWER_ERROR = "rag_answer_error"
+   RAG_ANSWER_SUCCESS = "rag_answer_success"
+   
+   DATA_PUSH_TASK_READY="data_push_task_ready"
+   PROCESS_AND_PUSH_WORKFLOW_READY="process_and_push_workflow_ready"
