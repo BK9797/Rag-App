@@ -8,7 +8,7 @@ A minimal implementation of a **Retrieval-Augmented Generation (RAG)** model for
 
 - Python 3.11
 - Docker & Docker Compose
-- PostgreSQL (if running locally)
+- MongoDB
 - Linux / macOS (Windows via WSL recommended)
 
 ---
@@ -93,34 +93,6 @@ sudo docker compose up -d
 
 ---
 
-## 🗄️ Run Alembic Migrations
-
-### Configure Alembic
-
-```bash
-cp alembic.ini.example alembic.ini
-```
-
-Update:
-
-```
-sqlalchemy.url = your_database_url
-```
-
-### (Optional) Create New Migration
-
-```bash
-alembic revision --autogenerate -m "Add new feature"
-```
-
-### Apply Migrations
-
-```bash
-alembic upgrade head
-```
-
----
-
 ## ▶️ Run the FastAPI Server
 
 ```bash
@@ -150,7 +122,6 @@ mini-rag/
 ├── routes/
 ├── models/
 ├── docker/
-├── alembic/
 ├── requirements.txt
 └── .env.example
 ```
