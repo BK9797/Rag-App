@@ -77,9 +77,9 @@ class CoHereProvider(LLMInterface):
             self.logger.error("Embedding model for CoHere was not set")
             return None
         
-        input_type = CoHereEnums.DOCUMENT
-        if document_type == DocumentTypeEnum.QUERY:
-            input_type = CoHereEnums.QUERY
+        input_type = CoHereEnums.DOCUMENT.value
+        if document_type == DocumentTypeEnum.QUERY.value:
+            input_type = CoHereEnums.QUERY.value
 
         response = self.client.embed(
             model = self.embedding_model_id,
@@ -97,5 +97,5 @@ class CoHereProvider(LLMInterface):
     def construct_prompt(self, prompt: str, role: str):
         return {
             "role": role,
-            "text": self.process_text(prompt)
+            "message": self.process_text(prompt)
         }

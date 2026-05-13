@@ -98,7 +98,7 @@ async def process_endpoint(request: Request, project_id : str , process_request 
 
     project_files_ids = {}
     if process_request.file_id:
-        asset_record = await asset_model.get_asset_records(asset_project_id=project.id, asset_name=process_request.file_id)
+        asset_record = await asset_model.get_asset_by_id(asset_id=process_request.file_id)
 
         if asset_record is None:
             return JSONResponse(

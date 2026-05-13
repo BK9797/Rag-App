@@ -59,18 +59,23 @@ class OpenAIProvider(LLMInterface):
             self.construct_prompt(prompt=prompt, role=OpenAIEnums.USER.value)
         )
 
-        response = self.client.chat.completions.create(
-            model = self.generation_model_id,
-            messages = chat_history,
-            max_tokens = max_output_tokens,
-            temperature = temperature
-        )
+        try:
+            response = self.client.chat.completions.create(
+                model = self.generation_model_id,
+                messages = chat_history,
+                max_tokens = max_output_tokens,
+                temperature = temperature
+            )
 
-        if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
-            self.logger.error("Error while generating text with OpenAI")
-            return None
+            if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message:
+                self.logger.error("Error while generating text with OpenAI")
+                return None
 
-        return response.choices[0].message.content
+            return response.choices[0].message.content
+        except Exception as e:
+            error_msg = f"OpenAI API Error: {str(e)}"
+            self.logger.error(error_msg)
+            raise Exception(error_msg)
 
 
     def embed_text(self, text: Union[str, List[str]], document_type: str = None):

@@ -6,7 +6,7 @@ from models.ChunkModel import ChunkModel
 from controllers import NLPController
 from models import ResponseSignal
 from tqdm.auto import tqdm
-from tasks.data_indexing import index_data_content
+from tasks.data_indexing import index_data_content_async
 
 import logging
 
@@ -20,15 +20,18 @@ nlp_router = APIRouter(
 @nlp_router.post("/index/push/{project_id}")
 async def index_project(request: Request, project_id: int, push_request: PushRequest):
 
-    task = index_data_content.delay(
+    result = await index_data_content_async(
         project_id=project_id,
-        do_reset=push_request.do_reset
+        do_reset=push_request.do_reset,
+        db_client=request.app.db_client,
+        embedding_client=request.app.embedding_client,
+        vectordb_client=request.app.vectordb_client,
     )
 
     return JSONResponse(
         content={
             "signal": ResponseSignal.DATA_PUSH_TASK_READY.value,
-            "task_id": task.id
+            "result": result
         }
     )
     
@@ -41,7 +44,7 @@ async def get_project_index_info(request: Request, project_id: int):
     )
 
     project = await project_model.get_project_or_create_one(
-        project_id=project_id
+        project_id=str(project_id)
     )
 
     nlp_controller = NLPController(
@@ -68,7 +71,7 @@ async def search_index(request: Request, project_id: int, search_request: Search
     )
 
     project = await project_model.get_project_or_create_one(
-        project_id=project_id
+        project_id=str(project_id)
     )
 
     nlp_controller = NLPController(
@@ -78,9 +81,15 @@ async def search_index(request: Request, project_id: int, search_request: Search
         template_parser=request.app.template_parser,
     )
 
-    results = await nlp_controller.search_vector_db_collection(
-        project=project, text=search_request.text, limit=search_request.limit
-    )
+    try:
+        results = await nlp_controller.search_vector_db_collection(
+            project=project, text=search_request.text, limit=search_request.limit
+        )
+    except Exception as e:
+        import traceback
+        with open('error2.log', 'w') as f:
+            f.write(traceback.format_exc())
+        raise
 
     if not results:
         return JSONResponse(
@@ -105,7 +114,7 @@ async def answer_rag(request: Request, project_id: int, search_request: SearchRe
     )
 
     project = await project_model.get_project_or_create_one(
-        project_id=project_id
+        project_id=str(project_id)
     )
 
     nlp_controller = NLPController(
@@ -115,17 +124,28 @@ async def answer_rag(request: Request, project_id: int, search_request: SearchRe
         template_parser=request.app.template_parser,
     )
 
-    answer, full_prompt, chat_history = await nlp_controller.answer_rag_question(
-        project=project,
-        query=search_request.text,
-        limit=search_request.limit,
-    )
+    try:
+        answer, full_prompt, chat_history = await nlp_controller.answer_rag_question(
+            project=project,
+            query=search_request.text,
+            limit=search_request.limit,
+        )
+    except Exception as e:
+        logger.error(f"Error in RAG answer: {str(e)}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "signal": ResponseSignal.RAG_ANSWER_ERROR.value,
+                "error": f"Failed to generate answer: {str(e)}"
+            }
+        )
 
     if not answer:
         return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={
-                    "signal": ResponseSignal.RAG_ANSWER_ERROR.value
+                    "signal": ResponseSignal.RAG_ANSWER_ERROR.value,
+                    "error": "Could not generate answer. Check API key and network connection."
                 }
         )
     

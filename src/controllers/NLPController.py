@@ -22,7 +22,7 @@ class NLPController(BaseController):
         collection_name = self.create_collection_name(project_id=project.project_id)
         return self.vectordb_client.delete_collection(collection_name=collection_name)
     
-    def get_vector_db_collection_info(self, project: Project):
+    async def get_vector_db_collection_info(self, project: Project):
         collection_name = self.create_collection_name(project_id=project.project_id)
         collection_info = self.vectordb_client.get_collection_info(collection_name=collection_name)
 
@@ -40,7 +40,7 @@ class NLPController(BaseController):
         # step2: manage items
         texts = [ c.chunk_text for c in chunks ]
         metadata = [ c.chunk_metadata for c in  chunks]
-        vectors = [ self.embedding_client.embed_text(text=texts, document_type=DocumentTypeEnum.DOCUMENT.value)
+        vectors = [ self.embedding_client.embed_text(text=text, document_type=DocumentTypeEnum.DOCUMENT.value)[0]
                     for text in texts ]
 
         # step3: create collection if not exists

@@ -76,7 +76,7 @@ class QdrantDBProvider(VectorDBInterface):
                 collection_name=collection_name,
                 records=[
                     models.Record(
-                        id=[record_id],
+                        id=record_id,
                         vector=vector,
                         payload={
                             "text": text, "metadata": metadata
@@ -131,13 +131,21 @@ class QdrantDBProvider(VectorDBInterface):
 
         return True
         
-    def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int = 5):
 
-        results = self.client.search(
-            collection_name=collection_name,
-            query_vector=vector,
-            limit=limit
-        )
+        if not self.is_collection_existed(collection_name):
+            self.logger.error(f"Collection {collection_name} does not exist. Please index data first.")
+            return None
+
+        try:
+            results = self.client.search(
+                collection_name=collection_name,
+                query_vector=vector,
+                limit=limit
+            )
+        except Exception as e:
+            self.logger.error(f"Error searching collection: {e}")
+            return None
 
         if not results or len(results) == 0:
             return None
